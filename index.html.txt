@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aviator Demo</title>
+<style>
+:root{--bg:#141516;--panel:#1b1c1d;--row:#101011;--chip:#2c2d30;--green:#28a909;--red:#e50539;--orange:#d07206;--text:#ebebeb;--mut:#8b8d92}
+*{box-sizing:border-box}
+body{margin:0;background:#0c0c0d;color:var(--text);font-family:Inter,"Segoe UI",Arial,sans-serif;padding:16px}
+.wrap{max-width:1180px;margin:auto}
+.demo{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:14px;color:var(--mut)}
+.tog{width:38px;height:22px;border-radius:12px;background:#2fbf4a;position:relative}
+.tog:after{content:"";position:absolute;right:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff}
+.game{background:var(--bg);border:1px solid #2a2b2d;border-radius:14px;padding:8px}
+.head{display:flex;justify-content:space-between;align-items:center;padding:6px 12px 10px}
+.logo{font:italic 800 28px "Segoe UI",Arial,sans-serif;color:var(--red);letter-spacing:-1px}
+.bal{color:#2fbf4a;font-weight:600;font-size:17px}.bal small{color:var(--mut);font-weight:400}
+.main{display:grid;grid-template-columns:330px 1fr;gap:8px}
+@media(max-width:860px){.main{grid-template-columns:1fr}.left{order:2;height:420px}}
+.left{background:var(--panel);border-radius:12px;padding:10px;display:flex;flex-direction:column;height:690px}
+.tabs{display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--row);border-radius:20px;padding:3px;font-size:13px}
+.tabs button{background:none;border:0;color:var(--text);padding:6px;border-radius:16px;cursor:pointer}
+.tabs button.on{background:var(--chip)}
+.sum{display:flex;justify-content:space-between;align-items:end;margin:12px 4px 4px}
+.sum .n{font-size:13px;color:var(--mut)}.sum .n b{color:var(--text);font-weight:500}
+.sum .w{font-size:22px;font-weight:700;text-align:right}.sum .w small{display:block;font-size:11px;color:var(--mut);font-weight:400}
+.bar{height:5px;background:#2a2b2d;border-radius:3px;margin:8px 4px 12px;overflow:hidden}.bar i{display:block;height:100%;background:var(--green);width:0}
+.cols,.prow{display:grid;grid-template-columns:1.1fr 1fr .8fr 1fr;align-items:center;padding:0 12px;font-size:13px}
+.cols{color:var(--mut);font-size:11px;margin-bottom:6px}
+.cols span:nth-child(n+3),.prow span:nth-child(n+3){text-align:right}
+.list{overflow:auto;flex:1}
+.prow{background:var(--row);border-radius:20px;height:32px;margin-bottom:4px}
+.prow.win{background:#1d3310;border:1px solid #2c5a16}
+.prow .x{color:#913ef8}
+.av{display:inline-block;width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:8px}
+.foot{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);padding-top:8px}
+.right{display:flex;flex-direction:column;gap:8px;min-width:0}
+.hist{display:flex;gap:14px;overflow:hidden;font-size:12.5px;font-weight:600;padding:4px 6px;white-space:nowrap}
+.c1{color:#34b4ff}.c2{color:#913ef8}.c3{color:#c017b4}
+.stage{position:relative;height:450px;border-radius:12px;overflow:hidden;border:1px solid #2a2b2d;
+  background:radial-gradient(ellipse at 50% 55%,#2a1458 0%,#0b0615 55%,#000 85%)}
+.rays{position:absolute;inset:-60%;background:repeating-conic-gradient(from 0deg at 0% 100%,#0a0a0a 0 7.5deg,#151515 7.5deg 15deg);opacity:.9;z-index:0;
+  -webkit-mask-image:radial-gradient(circle at 0 100%,#000 10%,transparent 70%)}
+.fun{position:absolute;top:0;left:0;right:0;background:#b87400;text-align:center;font-weight:700;font-size:13px;padding:2px;z-index:3}
+canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2;pointer-events:none}
+.big{font-size:104px;font-weight:800;line-height:1}
+.big.crash{color:var(--red)}
+.fly{font-size:44px;font-weight:500;letter-spacing:1px;margin-bottom:12px}
+.wait{display:flex;flex-direction:column;align-items:center;gap:14px}
+.wait .t{font:italic 800 56px "Segoe UI",Arial;color:var(--red)}
+.wait .pb{width:200px;height:5px;background:#2a2b2d;border-radius:3px;overflow:hidden}.wait .pb i{display:block;height:100%;background:var(--red);width:100%}
+.hide{display:none!important}
+.bets{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:700px){.bets{grid-template-columns:1fr}}
+.bp{background:var(--panel);border-radius:12px;padding:12px 16px 16px}
+.bt{display:flex;justify-content:center;margin-bottom:12px}
+.bt .tabs{width:200px}
+.ctl{display:flex;gap:14px;align-items:center;justify-content:center}
+.amt{width:140px}
+.amt .top{display:flex;align-items:center;justify-content:space-between;background:var(--row);border-radius:22px;padding:4px 6px}
+.amt .top button{width:26px;height:26px;border-radius:50%;border:0;background:var(--chip);color:#aaa;font-size:16px;cursor:pointer}
+.amt input{width:60px;background:none;border:0;color:var(--text);text-align:center;font-size:16px;font-weight:600;outline:0}
+.q{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px}
+.q button{background:var(--row);border:0;color:var(--mut);border-radius:14px;padding:5px;cursor:pointer}
+.go{flex:1;max-width:210px;height:82px;border:1px solid #9be67f;border-radius:12px;background:var(--green);color:#fff;font-size:22px;cursor:pointer;line-height:1.2}
+.go small{font-size:16px}
+.go.cash{background:var(--orange);border-color:#ffc063}
+.go.cancel{background:var(--red);border-color:#ff7b96}
+.go.placed{background:#3a3b3e;border-color:#555;font-size:16px}
+.autoopt{margin-top:12px;font-size:13px;color:var(--mut);display:flex;gap:8px;align-items:center;justify-content:center}
+.autoopt input[type=number]{width:70px;background:var(--row);border:0;border-radius:14px;padding:5px 8px;color:var(--text)}
+.note{text-align:center;color:var(--mut);font-size:12px;margin-top:12px}
+/* auth */
+.auth{margin-left:auto;display:flex;gap:8px;align-items:center}
+.ab{border:0;border-radius:10px;padding:10px 18px;font-weight:600;font-size:14px;cursor:pointer;color:var(--text)}
+.ab.ghost{background:var(--chip)}.ab.solid{background:var(--green)}
+.uname{color:var(--text);font-weight:600}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.card{background:#fff;color:#1a1b1e;border-radius:22px;width:100%;max-width:390px;padding:20px 20px 24px;position:relative;max-height:96vh;overflow:auto}
+.card h2{margin:0 0 16px;font-size:26px;font-weight:600}
+.x-close{position:absolute;right:18px;top:20px;background:none;border:0;font-size:22px;cursor:pointer;color:#333}
+.mt{display:grid;grid-template-columns:1fr 1fr;background:#eef0f3;border-radius:14px;padding:3px;margin-bottom:16px}
+.mt button{border:0;background:none;border-radius:12px;padding:10px;font-weight:600;font-size:14px;cursor:pointer;color:#222}
+.mt button.on{background:#1b6fe8;color:#fff}
+.fld{display:flex;align-items:center;background:#eef0f3;border:1.5px solid transparent;border-radius:12px;height:44px;margin-bottom:10px;padding:0 12px;gap:10px}
+.fld:focus-within{border-color:#4a90f0;background:#fff}
+.fld input,.fld select{border:0;background:none;outline:0;font-size:15px;color:#1a1b1e;flex:1;min-width:0}
+.fld select{flex:none;width:76px}
+.fld .pre{color:#1a1b1e;font-size:15px}
+.err{color:#d6204a;font-size:13px;min-height:18px;margin:2px 0 6px}
+.forgot{display:block;text-align:right;color:#1b6fe8;font-weight:600;font-size:14px;margin:4px 0 14px;text-decoration:none;cursor:pointer}
+.submit{width:100%;height:46px;border:0;border-radius:12px;background:#02b04f;color:#fff;font-weight:700;font-size:15px;cursor:pointer}
+.sw{text-align:center;margin-top:20px;font-size:14px}.sw a{display:block;color:#1b6fe8;font-weight:600;cursor:pointer;margin-top:6px}
+.hint{background:#fff6dd;color:#6a5200;border-radius:10px;font-size:12px;padding:8px 10px;margin-top:14px;line-height:1.4}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1f7a37;color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;z-index:60}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="demo">
+    <span>Demo mode</span><span class="tog"></span><span>(play money only)</span>
+    <span class="auth" id="authBox">
+      <button class="ab ghost" id="btnLogin">Login</button>
+      <button class="ab solid" id="btnReg">Registration</button>
+    </span>
+  </div>
+  <div class="game">
+    <div class="head"><span class="logo">Aviator</span><span class="bal"><span id="bal">30,000.00</span> <small>USD</small></span></div>
+    <div class="main">
+      <div class="left">
+        <div class="tabs" id="ltabs"><button class="on" data-t="all">All Bets</button><button data-t="prev">Previous</button><button data-t="top">Top</button></div>
+        <div class="sum"><div class="n"><b id="nb">0/0</b> Bets</div><div class="w"><span id="tw">0.00</span><small>Total win USD</small></div></div>
+        <div class="bar"><i id="barfill"></i></div>
+        <div class="cols"><span>Player</span><span>Bet USD</span><span>X</span><span>Win USD</span></div>
+        <div class="list" id="plist"></div>
+        <div class="foot"><span>Provably Fair Game</span><span>Demo clone</span></div>
+      </div>
+      <div class="right">
+        <div class="hist" id="hist"></div>
+        <div class="stage">
+          <div class="rays"></div>
+          <div class="fun">FUN MODE</div>
+          <canvas id="cv"></canvas>
+          <div class="ov">
+            <div id="vWait" class="wait"><div class="t">SATYAM</div><div class="pb"><i id="wbar"></i></div></div>
+            <div id="vFly" class="hide"><div class="fly" id="flyTxt">FLEW AWAY!</div><div class="big" id="mult">1.00x</div></div>
+          </div>
+        </div>
+        <div class="bets" id="bets"></div>
+      </div>
+    </div>
+  </div>
+  <div class="note">Play-money demo for learning. Not connected to any real game; real rounds can't be predicted.</div>
+</div>
+
+<div class="modal hide" id="modal">
+  <div class="card">
+    <button class="x-close" id="mClose" aria-label="Close">✕</button>
+    <h2 id="mTitle">Login</h2>
+    <div class="mt" id="mMethod"><button class="on" data-m="phone">Phone</button><button data-m="email">Email</button></div>
+    <div class="fld" id="fPhone">
+      <select id="cc"><option>+91</option><option>+1</option><option>+44</option><option>+61</option></select>
+      <input id="phone" type="tel" inputmode="numeric" maxlength="10" placeholder="00000 00000" autocomplete="off">
+    </div>
+    <div class="fld hide" id="fEmail"><input id="email" type="email" placeholder="Email" autocomplete="off"></div>
+    <div class="fld"><input id="pass" type="password" placeholder="Password" autocomplete="off"></div>
+    <div class="fld hide" id="fConf"><input id="pass2" type="password" placeholder="Confirm password" autocomplete="off"></div>
+    <a class="forgot" id="forgot">Forgot your password?</a>
+    <div class="err" id="err"></div>
+    <button class="submit" id="mSubmit">Log in</button>
+    <div class="sw"><span id="swTxt">Don't have an account?</span><a id="swLink">Register</a></div>
+    <div class="hint">Demo only. Nothing is sent anywhere and accounts are lost on refresh. Don't use a real password. Try phone 9999999999 or demo@example.com with password demo123.</div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+let balance = 30000, phase = 'wait', mult = 1, crashAt = 2, t0 = 0, waitAcc = 0, lastT = performance.now();
+const WAIT = 5, history = [1.0,1.0,1.66,3.83,1.22,2.69,1.03,3.83,1.27,1.0,5.39,2.39,1.38,1.03,1.28,1.06,3.72,3.37,3.28,1.32,1.0,23.24];
+let players = [], prevPlayers = [], tab = 'all';
+
+/* crash point with 3% house edge */
+const rollCrash = () => Math.max(1, Math.floor(100*0.97/(1-Math.random()))/100);
+const cls = v => v < 2 ? 'c1' : v < 10 ? 'c2' : 'c3';
+
+/* ---------- bet panels ---------- */
+const panels = [0,1].map(() => ({amount:1, bet:0, cashed:false, queued:false}));
+function buildPanels(){
+  $('bets').innerHTML = panels.map((p,i)=>`
+    <div class="bp">
+      <div class="bt"><div class="tabs" data-p="${i}"><button class="on" data-m="bet">Bet</button><button data-m="auto">Auto</button></div></div>
+      <div class="ctl">
+        <div class="amt">
+          <div class="top"><button data-a="-">−</button><input id="amt${i}" type="number" min="1" value="1"><button data-a="+">+</button></div>
+          <div class="q">${[1,2,5,10].map(v=>`<button data-q="${v}">${v}</button>`).join('')}</div>
+        </div>
+        <button class="go" id="go${i}"></button>
+      </div>
+      <div class="autoopt hide" id="ao${i}"><label><input type="checkbox" id="auto${i}"> Auto cash out at</label><input type="number" id="at${i}" value="2" min="1.01" step="0.1"><span>x</span></div>
+    </div>`).join('');
+  document.querySelectorAll('.bp').forEach((el,i)=>{
+    const amt = el.querySelector('#amt'+i);
+    el.querySelector('[data-a="-"]').onclick = ()=>{ amt.value = Math.max(1,+amt.value-1); refresh(); };
+    el.querySelector('[data-a="+"]').onclick = ()=>{ amt.value = +amt.value+1; refresh(); };
+    el.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{ amt.value=b.dataset.q; refresh(); });
+    amt.oninput = refresh;
+    el.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+      el.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+      $('ao'+i).classList.toggle('hide', b.dataset.m!=='auto');
+    });
+    $('go'+i).onclick = ()=>onGo(i);
+  });
+}
+function refresh(){
+  panels.forEach((p,i)=>{
+    p.amount = Math.max(1, +$('amt'+i).value || 1);
+    const b = $('go'+i); b.className = 'go';
+    if (phase==='fly' && p.bet>0 && !p.cashed){ b.classList.add('cash'); b.innerHTML = `Cash out<br><small>${fmt(p.bet*mult)} USD</small>`; }
+    else if (p.queued){ b.classList.add('cancel'); b.innerHTML = 'Cancel<br><small>next round</small>'; }
+    else if (p.bet>0){ b.classList.add('placed'); b.innerHTML = p.cashed ? 'Cashed out' : 'Bet placed'; }
+    else b.innerHTML = `Bet<br><small>${fmt(p.amount)} USD</small>`;
+  });
+  $('bal').textContent = fmt(balance);
+}
+function onGo(i){
+  const p = panels[i];
+  if (phase==='fly' && p.bet>0 && !p.cashed) return cashOut(i);
+  if (p.queued){ p.queued=false; return refresh(); }
+  if (p.bet>0) return;
+  phase==='wait' ? placeBet(i) : (p.queued = true);
+  refresh();
+}
+function placeBet(i){
+  const p = panels[i];
+  if (p.amount > balance){ p.queued=false; return; }
+  balance -= p.amount; p.bet = p.amount; p.cashed = false; p.queued = false;
+}
+function cashOut(i, at = mult){
+  const p = panels[i]; if (p.bet<=0 || p.cashed) return;
+  balance += p.bet*at; p.cashed = true; refresh();
+}
+
+/* ---------- players list ---------- */
+const colors = ['#8fb4c9','#c9a27a','#b4c9d3','#6fb7b0','#d49a6a','#7a8fc9','#c97a9a'];
+const tails = ['0','4','8','6','9','3','2','7'];
+function spawnPlayers(){
+  players = Array.from({length:314},()=>({
+    n:'d***'+tails[Math.floor(Math.random()*tails.length)], c:colors[Math.floor(Math.random()*colors.length)],
+    bet:Math.random()<.8?100:[10,20,50,200,500][Math.floor(Math.random()*5)],
+    target:Math.random()<.25?1.02+Math.random()*.3:1.2+Math.random()*Math.random()*12, won:null}));
+  drawPlayers();
+}
+function rowHTML(p){ return `<div class="prow ${p.won?'win':''}"><span><i class="av" style="background:${p.c}"></i>${p.n}</span><span>${fmt(p.bet)}</span><span class="x">${p.won?p.won.toFixed(2)+'x':''}</span><span>${p.won?fmt(p.bet*p.won):''}</span></div>`; }
+function drawPlayers(){
+  let src = players;
+  if (tab==='prev') src = prevPlayers;
+  if (tab==='top') src = [...prevPlayers].filter(p=>p.won).sort((a,b)=>b.bet*b.won-a.bet*a.won);
+  const live = src.filter(p=>p.won);
+  const sorted = tab==='all' ? [...live.sort((a,b)=>b.bet*b.won-a.bet*a.won), ...src.filter(p=>!p.won)] : src;
+  $('plist').innerHTML = sorted.slice(0,60).map(rowHTML).join('');
+  const won = players.filter(p=>p.won);
+  $('nb').textContent = `${won.length}/${players.length}`;
+  $('tw').textContent = fmt(won.reduce((s,p)=>s+p.bet*p.won,0));
+  $('barfill').style.width = (won.length/players.length*100)+'%';
+}
+document.querySelectorAll('#ltabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#ltabs button').forEach(x=>x.classList.toggle('on',x===b)); tab=b.dataset.t; drawPlayers();
+});
+function drawHist(){ $('hist').innerHTML = history.slice(0,26).map(v=>`<span class="${cls(v)}">${v.toFixed(2)}x</span>`).join(''); }
+
+/* ---------- round flow ---------- */
+function startWait(){
+  phase='wait'; waitAcc=0; mult=1;
+  $('vWait').classList.remove('hide'); $('vFly').classList.add('hide');
+  panels.forEach((p,i)=>{ p.bet=0; p.cashed=false; if(p.queued) placeBet(i); });
+  spawnPlayers(); refresh();
+}
+function startFly(){
+  phase='fly'; crashAt=rollCrash(); t0=performance.now();
+  $('vWait').classList.add('hide'); $('vFly').classList.remove('hide');
+  $('flyTxt').classList.add('hide'); $('mult').className='big';
+}
+function endRound(){
+  phase='crash'; mult=crashAt;
+  $('flyTxt').classList.remove('hide'); $('mult').className='big crash'; $('mult').textContent=crashAt.toFixed(2)+'x';
+  history.unshift(crashAt); drawHist(); prevPlayers = players.map(p=>({...p}));
+  panels.forEach(p=>{ if(p.bet>0 && !p.cashed) p.bet = p.bet; });
+  refresh(); setTimeout(startWait, 3000);
+}
+
+/* ---------- canvas ---------- */
+const cv=$('cv'), ctx=cv.getContext('2d'), dpr=devicePixelRatio||1;
+function resize(){ cv.width=cv.clientWidth*dpr; cv.height=cv.clientHeight*dpr; }
+addEventListener('resize',resize);
+function plane(x,y,ang,s){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(ang); ctx.scale(s,s); ctx.fillStyle='#e50539';
+  ctx.beginPath(); ctx.moveTo(-40,2); ctx.lineTo(-20,-8); ctx.lineTo(28,-8); ctx.lineTo(44,0); ctx.lineTo(28,8); ctx.lineTo(-30,8); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-6,-8); ctx.lineTo(8,-26); ctx.lineTo(18,-26); ctx.lineTo(14,-8); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-40,2); ctx.lineTo(-48,-14); ctx.lineTo(-36,-8); ctx.fill();
+  ctx.fillRect(44,-14,5,28); ctx.restore();
+}
+function draw(){
+  const W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
+  if (phase==='wait'){ plane(40*dpr,H-30*dpr,-0.1,1.4*dpr); return; }
+  const prog = Math.min(1,(mult-1)/5);
+  const ex = 30*dpr + (W*0.82-30*dpr)*Math.min(1,0.2+prog*0.85);
+  const ey = H - 10*dpr - (H*0.78)*Math.min(1,0.1+prog*0.95);
+  const cx = ex*0.6, cy = H-10*dpr;
+  ctx.beginPath(); ctx.moveTo(0,H-6*dpr); ctx.quadraticCurveTo(cx,cy,ex,ey);
+  ctx.strokeStyle='#e50539'; ctx.lineWidth=4*dpr; ctx.stroke();
+  ctx.lineTo(ex,H); ctx.lineTo(0,H); ctx.closePath();
+  const g=ctx.createLinearGradient(0,ey,0,H); g.addColorStop(0,'rgba(229,5,57,.55)'); g.addColorStop(1,'rgba(120,0,20,.7)');
+  ctx.fillStyle=g; ctx.fill();
+  if (phase==='fly') plane(ex,ey-8*dpr,-0.35,1.1*dpr);
+}
+
+/* ---------- main loop ---------- */
+function tick(now){
+  const dt=(now-lastT)/1000; lastT=now;
+  if (phase==='wait'){
+    waitAcc+=dt; $('wbar').style.width = Math.max(0,100-waitAcc/WAIT*100)+'%';
+    if (waitAcc>=WAIT) startFly();
+  } else if (phase==='fly'){
+    const el=(now-t0)/1000;
+    mult = Math.exp(0.09*el) + 0.06*el;
+    panels.forEach((p,i)=>{
+      if ($('auto'+i).checked && p.bet>0 && !p.cashed){
+        const at=+$('at'+i).value||2; if (mult>=at && at<crashAt) cashOut(i,at);
+      }
+    });
+    let ch=false; players.forEach(p=>{ if(!p.won && mult>=p.target && p.target<crashAt){p.won=+p.target.toFixed(2);ch=true;} });
+    if (ch && Math.random()<.5) drawPlayers();
+    if (mult>=crashAt) endRound();
+    else { $('mult').textContent=mult.toFixed(2)+'x'; refresh(); }
+  }
+  draw(); requestAnimationFrame(tick);
+}
+
+/* ---------- login / registration (in-memory demo, nothing is sent anywhere) ---------- */
+const accounts = [{key:'phone:+919999999999', pass:'demo123', label:'+91 99999 99999'},
+                  {key:'email:demo@example.com', pass:'demo123', label:'demo@example.com'}];
+let mode = 'login', method = 'phone', user = null;
+
+function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2200); }
+function openModal(m){ mode=m; $('modal').classList.remove('hide'); renderModal(); $('err').textContent=''; }
+function closeModal(){ $('modal').classList.add('hide'); ['phone','email','pass','pass2'].forEach(i=>$(i).value=''); }
+function renderModal(){
+  const login = mode==='login';
+  $('mTitle').textContent = login ? 'Login' : 'Registration';
+  $('mSubmit').textContent = login ? 'Log in' : 'Register';
+  $('swTxt').textContent = login ? "Don't have an account?" : 'Already have an account?';
+  $('swLink').textContent = login ? 'Register' : 'Log in';
+  $('forgot').classList.toggle('hide', !login);
+  $('fConf').classList.toggle('hide', login);
+  $('fPhone').classList.toggle('hide', method!=='phone');
+  $('fEmail').classList.toggle('hide', method!=='email');
+  document.querySelectorAll('#mMethod button').forEach(b=>b.classList.toggle('on', b.dataset.m===method));
+}
+function submitAuth(){
+  const pass = $('pass').value; let key, label;
+  if (method==='phone'){
+    const num = $('phone').value.replace(/\s/g,'');
+    if (!/^\d{10}$/.test(num)) return $('err').textContent='Enter a valid 10-digit phone number.';
+    key = 'phone:'+$('cc').value+num; label = $('cc').value+' '+num;
+  } else {
+    const em = $('email').value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return $('err').textContent='Enter a valid email address.';
+    key = 'email:'+em; label = em;
+  }
+  if (pass.length < 6) return $('err').textContent='Password must be at least 6 characters.';
+  const found = accounts.find(a=>a.key===key);
+  if (mode==='register'){
+    if (found) return $('err').textContent='This account already exists. Log in instead.';
+    if (pass !== $('pass2').value) return $('err').textContent='Passwords do not match.';
+    accounts.push({key, pass, label}); setUser(label); toast('Account created. Welcome!');
+  } else {
+    if (!found) return $('err').textContent='No account found. Register first.';
+    if (found.pass !== pass) return $('err').textContent='Wrong password.';
+    setUser(found.label); toast('Logged in');
+  }
+  closeModal();
+}
+function setUser(label){
+  user = label;
+  $('authBox').innerHTML = `<span class="uname">${label}</span><button class="ab ghost" id="btnOut">Log out</button>`;
+  $('btnOut').onclick = ()=>{ user=null; $('authBox').innerHTML='<button class="ab ghost" id="btnLogin">Login</button><button class="ab solid" id="btnReg">Registration</button>'; bindAuthBtns(); toast('Logged out'); };
+}
+function bindAuthBtns(){ $('btnLogin').onclick=()=>openModal('login'); $('btnReg').onclick=()=>openModal('register'); }
+bindAuthBtns();
+$('mClose').onclick = closeModal;
+$('modal').addEventListener('mousedown', e=>{ if(e.target===$('modal')) closeModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); if(e.key==='Enter' && !$('modal').classList.contains('hide')) submitAuth(); });
+$('mSubmit').onclick = submitAuth;
+$('swLink').onclick = ()=>{ mode = mode==='login' ? 'register' : 'login'; renderModal(); $('err').textContent=''; };
+$('forgot').onclick = ()=>{ $('err').textContent='Password reset is not available in the demo.'; };
+document.querySelectorAll('#mMethod button').forEach(b=>b.onclick=()=>{ method=b.dataset.m; renderModal(); $('err').textContent=''; });
+
+buildPanels(); drawHist(); resize(); startWait();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
