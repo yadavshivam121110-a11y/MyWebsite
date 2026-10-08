@@ -95,6 +95,14 @@ canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1}
 .sw{text-align:center;margin-top:20px;font-size:14px}.sw a{display:block;color:#1b6fe8;font-weight:600;cursor:pointer;margin-top:6px}
 .hint{background:#fff6dd;color:#6a5200;border-radius:10px;font-size:12px;padding:8px 10px;margin-top:14px;line-height:1.4}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1f7a37;color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;z-index:60}
+/* admin */
+.adminBtn{position:fixed;right:16px;bottom:16px;z-index:40;background:#3a3b3e;color:#fff;border:1px solid #666;border-radius:20px;padding:9px 16px;font-weight:600;cursor:pointer}
+.adminPanel{position:fixed;right:16px;bottom:64px;z-index:41;width:260px;background:#1b1c1d;border:1px solid #444;border-radius:14px;padding:14px;box-shadow:0 10px 30px #000a}
+.adminPanel h4{margin:0 0 10px;font-size:15px}
+.adminPanel input{width:100%;background:#101011;border:1px solid #333;border-radius:10px;padding:9px;color:#fff;font-size:15px;margin-bottom:8px}
+.adminPanel button{width:100%;border:0;border-radius:10px;padding:9px;font-weight:600;cursor:pointer;margin-bottom:6px;color:#fff}
+.adminPanel .set{background:var(--green)}.adminPanel .now{background:var(--red)}.adminPanel .clr{background:var(--chip)}
+.adminPanel .st{font-size:12px;color:var(--mut);margin-top:4px;min-height:16px}
 </style>
 </head>
 <body>
@@ -133,6 +141,22 @@ canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1}
     </div>
   </div>
   <div class="note">Play-money demo for learning. Not connected to any real game; real rounds can't be predicted.</div>
+</div>
+
+<button class="adminBtn" id="adminBtn">Admin</button>
+<div class="adminPanel hide" id="adminPanel">
+  <h4>Admin panel (demo)</h4>
+  <div id="adminLock">
+    <input id="adminPass" type="password" placeholder="Admin password">
+    <button class="set" id="adminUnlock">Unlock</button>
+  </div>
+  <div id="adminMain" class="hide">
+    <input id="crashVal" type="number" step="0.01" min="1" placeholder="Crash at (e.g. 2.11)">
+    <button class="set" id="setCrash">Set crash point</button>
+    <button class="now" id="crashNow">Crash now</button>
+    <button class="clr" id="clrCrash">Back to random</button>
+  </div>
+  <div class="st" id="adminSt"></div>
 </div>
 
 <div class="modal hide" id="modal">
@@ -259,7 +283,7 @@ function startWait(){
   spawnPlayers(); refresh();
 }
 function startFly(){
-  phase='fly'; crashAt=rollCrash(); t0=performance.now();
+  phase='fly'; crashAt = forced!==null ? forced : rollCrash(); t0=performance.now();
   $('vWait').classList.add('hide'); $('vFly').classList.remove('hide');
   $('flyTxt').classList.add('hide'); $('mult').className='big';
 }
@@ -377,6 +401,30 @@ $('mSubmit').onclick = submitAuth;
 $('swLink').onclick = ()=>{ mode = mode==='login' ? 'register' : 'login'; renderModal(); $('err').textContent=''; };
 $('forgot').onclick = ()=>{ $('err').textContent='Password reset is not available in the demo.'; };
 document.querySelectorAll('#mMethod button').forEach(b=>b.onclick=()=>{ method=b.dataset.m; renderModal(); $('err').textContent=''; });
+
+/* ---------- admin panel (demo only: controls the crash point of this local play-money game) ---------- */
+let forced = null, adminOK = false;
+const ADMIN_PASSWORD = 'admin123';   // change this
+const adminSt = t => $('adminSt').textContent = t;
+$('adminBtn').onclick = () => $('adminPanel').classList.toggle('hide');
+$('adminUnlock').onclick = () => {
+  if ($('adminPass').value === ADMIN_PASSWORD){ adminOK = true; $('adminLock').classList.add('hide'); $('adminMain').classList.remove('hide'); adminSt(''); }
+  else adminSt('Wrong admin password.');
+};
+$('setCrash').onclick = () => {
+  const v = Math.round(parseFloat($('crashVal').value)*100)/100;
+  if (!adminOK || !(v >= 1)) return adminSt('Enter a value of 1.00 or more.');
+  if (phase==='fly'){
+    if (v <= mult){ crashAt = mult; adminSt(`Already past ${v.toFixed(2)}x, crashing now.`); }
+    else { crashAt = v; adminSt(`This round will crash at ${v.toFixed(2)}x.`); }
+  } else {
+    forced = v; adminSt(`Next round will crash at ${v.toFixed(2)}x.`);
+  }
+};
+$('crashNow').onclick = () => { if (adminOK && phase==='fly'){ crashAt = mult; adminSt('Crashed.'); } else adminSt('Only works while the plane is flying.'); };
+$('clrCrash').onclick = () => { forced = null; adminSt('Back to random crash points.'); };
+/* a forced value is used once, then random again */
+const _endRound = endRound; endRound = function(){ forced = null; _endRound(); };
 
 buildPanels(); drawHist(); resize(); startWait();
 requestAnimationFrame(tick);
